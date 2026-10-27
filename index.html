@@ -450,7 +450,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
     <button class="catalog-card" onclick="abrirCategoria('helados')"><img class="catalog-cover" src="assets/img-d0a573bd8b62.webp" alt="Helados Dulce Mora"><div class="catalog-card-body"><span class="catalog-name">Helados</span><span class="catalog-hint">Potes, gustos y extras</span><span class="catalog-status available">Disponible</span></div></button>
     <button class="catalog-card" onclick="abrirCategoria('paletas')"><img class="catalog-cover" src="assets/img-fac0f8511475.webp" alt="Paletas"><div class="catalog-card-body"><span class="catalog-name">Paletas</span><span class="catalog-hint">Al agua y a la crema</span><span class="catalog-status">Disponible</span></div></button>
     <button class="catalog-card" onclick="abrirCategoria('guapaletas')"><img class="catalog-cover" src="assets/img-921820b06209.webp" alt="Guapaletas"><div class="catalog-card-body"><span class="catalog-name">Guapaletas</span><span class="catalog-hint">Sabores disponibles</span><span class="catalog-status available">Disponible</span></div></button>
-    <button class="catalog-card" onclick="abrirCategoria('postrecitos')"><img class="catalog-cover" src="assets/img-59baff555d09.webp" alt="Postrecitos cuchareables"><div class="catalog-card-body"><span class="catalog-name">Postrecitos cuchareables</span><span class="catalog-hint">Sin stock por el momento</span><span class="catalog-status soon">Sin stock</span></div></button>
+    <button class="catalog-card" onclick="abrirCategoria('postrecitos')"><img class="catalog-cover" src="assets/img-59baff555d09.webp" alt="Postrecitos cuchareables"><div class="catalog-card-body"><span class="catalog-name">Postrecitos cuchareables</span><span class="catalog-hint">Disponibles para pedir</span><span class="catalog-status available">Disponible</span></div></button>
     <button class="catalog-card" onclick="abrirCategoria('tortas')"><img class="catalog-cover" src="assets/img-46343e2e5f9d.webp" alt="Tortas heladas"><div class="catalog-card-body"><span class="catalog-name">Tortas heladas</span><span class="catalog-hint">Tortas heladas Dulce Mora</span><span class="catalog-status">Disponible</span></div></button>
     <button class="catalog-card" onclick="abrirCategoria('franui')"><img class="catalog-cover" src="assets/img-f9cd72766d6b.webp" alt="Franui"><div class="catalog-card-body"><span class="catalog-name">Franui</span><span class="catalog-hint">Elegí tu variedad</span><span class="catalog-status available">Disponible</span></div></button>
     <button class="catalog-card" onclick="abrirCategoria('banana')"><img class="catalog-cover" src="assets/img-126150b1dc22.webp" alt="Le Banana Bites"><div class="catalog-card-body"><span class="catalog-name">Le Banana Bites</span><span class="catalog-hint">Le Banana Bites</span><span class="catalog-status available">Disponible</span></div></button>
@@ -672,6 +672,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 <script>
 const DM_API_URL = 'https://script.google.com/macros/s/AKfycbygO20u3jSvivUgfwkD6kVBSZv5VP4fuvTjf-ejpv4hWmnckc_24uiWbA_f-DyLyUpH/exec';
 let DM_REMOTE_STOCK = {};
+let DM_STOCK_READY = false;
 
 function dmAplicarProductosRemotos(productos){
   DM_REMOTE_STOCK={};
@@ -693,10 +694,19 @@ async function dmSyncStock(){
     const data=await r.json();
     if(!data || data.ok!==true) throw new Error((data&&data.error)||'No se pudo leer el stock');
     dmAplicarProductosRemotos(data.products||[]);
+    DM_STOCK_READY = true;
     if(typeof renderPotes==='function') renderPotes();
     if(typeof renderCart==='function') renderCart();
+    const view=document.getElementById('categoryView');
+    if(view && view.style.display!=='none' && window.DM_LAST_CATEGORY){
+      const content=document.getElementById('categoryContent');
+      if(content) content.innerHTML=renderCategoria(window.DM_LAST_CATEGORY);
+    }
+    return true;
   }catch(e){
+    DM_STOCK_READY = false;
     console.warn('Stock remoto no disponible',e);
+    return false;
   }
 }
 
@@ -994,6 +1004,7 @@ function volverInicio(irAOpciones=false){
 }
 
 function abrirCategoria(cat){
+  window.DM_LAST_CATEGORY=cat;
   ocultarVistasCatalogo();
   if(cat==='helados'){
     const hel=document.getElementById('heladosSection');
@@ -1016,7 +1027,10 @@ function abrirCategoria(cat){
 
 function stockDisponibleProducto(id){
   const remoto=DM_REMOTE_STOCK[id];
-  if(remoto && typeof remoto.stock==='number') return remoto.stock;
+  if(remoto){
+    if(typeof remoto.stock==='number') return remoto.stock;
+    return null;
+  }
   const p=PRODUCTOS_EXTRA.find(x=>x.id===id);
   return p && typeof p.stock==='number' ? p.stock : null;
 }
@@ -1112,6 +1126,13 @@ function agregarProductoExtra(id){
   const p=PRODUCTOS_EXTRA.find(x=>x.id===id);
   if(!p)return;
   const qty=productoQty[id]||1;
+  const stock=stockDisponibleProducto(id);
+  const ya=countProductInCart(id);
+  if(stock!==null && (ya+qty)>stock){
+    const quedan=Math.max(0,stock-ya);
+    toast(quedan>0 ? ('⚠️ Solo quedan '+quedan+' de '+p.name) : ('⚠️ No queda más stock de '+p.name));
+    return;
+  }
   for(let i=0;i<qty;i++)cart.push({kind:'producto',product:p,price:p.price});
   productoQty[id]=1;
   const q=document.getElementById('qty-'+id);if(q)q.textContent='1';
@@ -1909,6 +1930,8 @@ initCountdown();
 renderPotes();
 updateCartCount();
 volverInicio();
+// Sincroniza precios y stock real con Google Sheets apenas abre la web.
+dmSyncStock();
 
 
 
