@@ -617,6 +617,12 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 <div class="sum-block"><div class="sum-block-title">🍦 Tu pedido</div><div id="sumItems"></div></div>
 <div id="sumDescuentoWrap"></div>
 <div class="sum-block"><div class="sum-block-title">📍 Datos de envío</div><div id="sumEnvioInfo"></div></div>
+<div class="sum-block"><div class="sum-block-title">💳 Medio de pago</div>
+  <select class="form-input" id="webPago">
+    <option value="Transferencia">Transferencia</option>
+    <option value="Efectivo">Efectivo</option>
+  </select>
+</div>
 <div class="sum-total-bar">
 <span class="sum-total-lbl">Total estimado</span>
 <span class="sum-total-amt" id="sumTotalAmt">$0</span>
@@ -664,91 +670,141 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 </div>
 
 <script>
-const DM_API_URL = ''; // Pegar acá la URL /exec del Apps Script cuando se publique.
+const DM_API_URL = 'https://script.google.com/macros/s/AKfycbygO20u3jSvivUgfwkD6kVBSZv5VP4fuvTjf-ejpv4hWmnckc_24uiWbA_f-DyLyUpH/exec';
 let DM_REMOTE_STOCK = {};
-let DM_REMOTE_SABORES = {};
+
+function dmAplicarProductosRemotos(productos){
+  DM_REMOTE_STOCK={};
+  (productos||[]).forEach(x=>{
+    DM_REMOTE_STOCK[x.id]=x;
+    const p=(typeof POTES!=='undefined')?POTES.find(v=>v.id===x.id):null;
+    if(p && Number(x.price)>0) p.price=Number(x.price);
+    const e=(typeof PRODUCTOS_EXTRA!=='undefined')?PRODUCTOS_EXTRA.find(v=>v.id===x.id):null;
+    if(e){
+      if(Number(x.price)>0) e.price=Number(x.price);
+      if(typeof x.stock==='number') e.stock=x.stock;
+    }
+  });
+}
 
 async function dmSyncStock(){
-  if(!DM_API_URL) return;
   try{
-    const r=await fetch(DM_API_URL+'?action=stock',{cache:'no-store'});
+    const r=await fetch(DM_API_URL+'?action=products&_='+Date.now(),{cache:'no-store'});
     const data=await r.json();
-    if(!data || !data.ok) return;
-    DM_REMOTE_STOCK={};
-    (data.productos||[]).forEach(x=>DM_REMOTE_STOCK[x.id]=x);
-    DM_REMOTE_SABORES={};
-    (data.sabores||[]).forEach(x=>DM_REMOTE_SABORES[x.id]=x);
-    GUSTOS.forEach(g=>{
-      const s=DM_REMOTE_SABORES[g.id];
-      if(s) g.stock=s.disponible===false?'sin':'ok';
-    });
-    if(typeof renderGustos==='function') renderGustos();
-    if(typeof PRODUCTOS_EXTRA!=='undefined'){
-      document.querySelectorAll('[data-cat-view]').forEach(()=>{});
-    }
-  }catch(e){console.warn('Stock remoto no disponible',e);}
+    if(!data || data.ok!==true) throw new Error((data&&data.error)||'No se pudo leer el stock');
+    dmAplicarProductosRemotos(data.products||[]);
+    if(typeof renderPotes==='function') renderPotes();
+    if(typeof renderCart==='function') renderCart();
+  }catch(e){
+    console.warn('Stock remoto no disponible',e);
+  }
 }
+
 function dmProductoDisponible(id){
   const s=DM_REMOTE_STOCK[id];
-  return !s || s.estado==='DISPONIBLE' || s.disponible===true;
+  if(!s) return true;
+  if(typeof s.stock==='number') return s.stock>0;
+  return String(s.status||'').toUpperCase()!=='SIN STOCK';
 }
+
 function dmStockTexto(id){
   const s=DM_REMOTE_STOCK[id];
   if(!s) return '';
-  if(s.estado==='SIN STOCK' || s.disponible===false) return 'Sin stock';
-  if(typeof s.stock==='number') return 'Stock: '+s.stock;
+  if(typeof s.stock==='number') return s.stock>0 ? 'Stock: '+s.stock : 'Sin stock';
+  if(String(s.status||'').toUpperCase()==='SIN STOCK') return 'Sin stock';
   return '';
 }
-function dmPayloadPedido(){
+
+function dmGetCheckoutData(){
+  const pagoEl=document.getElementById('webPago');
+  const medioPago=pagoEl ? pagoEl.value : 'Transferencia';
+  const delivery=entregaMode==='delivery';
+  const nombre=delivery
+    ? (document.getElementById('fNombre').value||'').trim()
+    : (document.getElementById('fNombreR').value||'').trim();
+  const telefono=delivery
+    ? (document.getElementById('fTel').value||'').trim()
+    : (document.getElementById('fTelR').value||'').trim();
+  const direccion=delivery ? (document.getElementById('fDireccion').value||'').trim() : '';
+  const entre=delivery ? (document.getElementById('fEntreCalles').value||'').trim() : '';
+  const barrio=delivery ? (document.getElementById('fBarrio').value||'').trim() : '';
+  const nota=delivery ? (document.getElementById('fNota').value||'').trim() : '';
+  const referencias=[entre?('Entre calles: '+entre):'',barrio?('Barrio: '+barrio):''].filter(Boolean).join(' · ');
+  return {medioPago,delivery,nombre,telefono,direccion,referencias,nota};
+}
+
+function dmPayloadPedido(desc=0){
+  const c=dmGetCheckoutData();
   const grouped=[];
-  const seen=new Set();
+  const prodMap=new Map();
+
   cart.forEach(item=>{
     if(item.kind==='producto'){
       const id=item.product.id;
-      if(seen.has(id)) return;
-      seen.add(id);
-      grouped.push({
-        tipo:'producto',
+      if(!prodMap.has(id)) prodMap.set(id,{
         id,
         nombre:item.product.name,
-        variante:item.product.desc,
-        cantidad:cart.filter(x=>x.kind==='producto'&&x.product.id===id).length,
-        precio_unitario:item.product.price
+        cantidad:0,
+        precio:Number(item.product.price||item.price||0)
       });
+      prodMap.get(id).cantidad++;
     }else{
       grouped.push({
-        tipo:'helado',
         id:item.pote.id,
         nombre:item.promoLabel||item.pote.name,
-        variante:item.pote.peso||'',
         cantidad:1,
-        precio_unitario:item.price,
-        gustos:item.gustos.filter(Boolean).map(g=>g.ticketName||g.name),
-        extras:item.toppings.map(t=>t.name)
+        precio:Number(item.price||0)
       });
     }
   });
+  prodMap.forEach(v=>grouped.push(v));
+
+  const extras=[];
+  if(desc>0) extras.push({tipo:'descuento',nombre:'Descuento web',cantidad:1,precio:-Math.abs(desc)});
+
+  const mapsLink=c.delivery && c.direccion
+    ? 'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent('Luis Santiago Genoud 2102, Florencio Varela, Buenos Aires, Argentina')+'&destination='+encodeURIComponent(c.direccion)
+    : '';
+
   return {
-    action:'webOrder',
-    pedido_id:'WEB-'+Date.now(),
-    fecha:new Date().toISOString(),
-    canal:'Web',
-    modalidad:entregaMode,
-    envio_costo:costoEnvioActual(),
-    distancia_km:envioDistKm,
-    items:grouped
+    action:'saveOrder',
+    data:{
+      canal:'Web',
+      items:grouped,
+      extras,
+      con_envio:c.delivery,
+      costo_envio:costoEnvioActual(),
+      distancia_km:envioDistKm===null?'':envioDistKm,
+      medio_pago:c.medioPago,
+      cliente:c.nombre,
+      telefono:c.telefono,
+      direccion:c.direccion,
+      referencias:c.referencias,
+      notas:c.nota,
+      transferencia_pagada:'No',
+      paga_con:'',
+      vuelto:'',
+      maps_link:mapsLink
+    }
   };
 }
-function dmRegistrarPedido(){
-  if(!DM_API_URL || !cart.length) return;
-  const body=JSON.stringify(dmPayloadPedido());
+
+async function dmRegistrarPedido(desc=0){
+  if(!cart.length) return {ok:false,error:'Pedido vacío'};
   try{
-    if(navigator.sendBeacon){
-      navigator.sendBeacon(DM_API_URL,new Blob([body],{type:'application/json'}));
-    }else{
-      fetch(DM_API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true});
-    }
-  }catch(e){console.warn('No se pudo registrar pedido',e);}
+    const r=await fetch(DM_API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(dmPayloadPedido(desc))
+    });
+    const data=await r.json();
+    if(!data || data.ok!==true) throw new Error((data&&data.error)||'No se pudo guardar el pedido');
+    if(Array.isArray(data.products)) dmAplicarProductosRemotos(data.products);
+    return data;
+  }catch(e){
+    console.error('No se pudo registrar pedido',e);
+    return {ok:false,error:e.message||String(e)};
+  }
 }
 
 // -- IMAGES --
@@ -1645,7 +1701,7 @@ function buildResumen(){
   document.getElementById('sumEnvioInfo').innerHTML=envH;
 }
 
-function confirmar(){
+async function confirmar(){
   const sub=cart.reduce((s,i)=>s+i.price,0);
   const ref=entregaMode==='delivery'
     ?document.getElementById('fRef').value.trim().toUpperCase()
@@ -1760,6 +1816,8 @@ function confirmar(){
   }
   msg+='💳 *TOTAL: $'+fmt(total)+'*\n';
   msg+='━━━━━━━━━━━━━━━━━━━━\n';
+  const pagoWeb=(document.getElementById('webPago')||{}).value||'Transferencia';
+  msg+='💳 *Medio de pago: '+pagoWeb+'*\n';
   msg+='🎴 Código cliente: '+clientCode+'\n';
   msg+='━━━━━━━━━━━━━━━━━━━━\n';
   msg+='_Gracias por elegir Dulce Mora!_ 🐾❤️';
@@ -1767,7 +1825,22 @@ function confirmar(){
   sellosCount=Math.min(sellosCount+1,6);
   
   safeStorageSet('dm_sellos',sellosCount);
-  dmRegistrarPedido();
+
+  const btn=document.querySelector('#view-resumen .btn-main.green');
+  const oldTxt=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='Guardando pedido...';}
+
+  const guardado=await dmRegistrarPedido(desc);
+
+  if(btn){btn.disabled=false;btn.textContent=oldTxt||'📲 Confirmar por WhatsApp';}
+
+  if(!guardado.ok){
+    const seguir=confirm('No pudimos sincronizar el pedido con el stock.\n\n'+(guardado.error||'Error desconocido')+'\n\n¿Querés abrir WhatsApp igual para no perder el pedido?');
+    if(!seguir) return;
+  }else{
+    await dmSyncStock();
+  }
+
   window.open('https://wa.me/5491178947062?text='+encodeURIComponent(msg),'_blank');
 }
 
