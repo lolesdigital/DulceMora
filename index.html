@@ -207,9 +207,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 .sum-total-lbl{font-size:13px;font-weight:700;color:var(--pink-dark);}
 .sum-total-amt{font-size:24px;font-weight:900;color:var(--pink-dark);}
 .wa-note{font-size:11px;color:var(--text-soft);text-align:center;line-height:1.6;margin-bottom:12px;}
-.descuento-row{background:var(--teal-light);border:1.5px solid var(--teal);border-radius:10px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-.descuento-lbl{font-size:12px;color:var(--teal);font-weight:700;}
-.descuento-val{font-size:14px;font-weight:900;color:var(--teal);}
 
 /* BUTTONS */
 .btn-main{background:var(--pink);color:#fff;border:none;border-radius:50px;width:100%;padding:14px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:background .15s,transform .1s;margin-bottom:8px;display:block;position:relative;z-index:1;}
@@ -589,13 +586,13 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 <div class="form-group"><label class="form-label">Entre calles</label><input class="form-input" id="fEntreCalles" placeholder="Entre ... y ..." type="text"/></div>
 <div class="form-group"><label class="form-label">Barrio</label><input class="form-input" id="fBarrio" placeholder="Barrio o zona" type="text"/></div>
 <div class="form-group"><label class="form-label">Teléfono *</label><input class="form-input" id="fTel" placeholder="11 1234 5678" type="tel"/></div>
-<div class="form-group"><label class="form-label">Código de referido (opcional)</label><input class="form-input" id="fRef" placeholder="Ej: MORA-AB12" style="text-transform:uppercase" type="text"/></div>
+
 <div class="form-group"><label class="form-label">Aclaración</label><input class="form-input" id="fNota" placeholder="Portón verde, timbre 2B..." type="text"/></div>
 </div>
 <div id="retiroFields" style="display:none">
 <div class="form-group"><label class="form-label" id="fNombreLabel">Nombre y apellido *</label><input class="form-input" id="fNombreR" placeholder="Nombre y apellido" type="text"/></div>
 <div class="form-group"><label class="form-label">Teléfono *</label><input class="form-input" id="fTelR" placeholder="11 1234 5678" type="tel"/></div>
-<div class="form-group"><label class="form-label">Código de referido (opcional)</label><input class="form-input" id="fRefR" placeholder="Ej: MORA-AB12" style="text-transform:uppercase" type="text"/></div>
+
 <a class="maps-btn" href="https://maps.google.com/?q=Luis+Santiago+Genoud+2102+Buenos+Aires+Buenos+Aires" target="_blank">
 <span class="maps-icon">📍</span>
 <div>
@@ -615,7 +612,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 <div class="scard-title">✅ Resumen del pedido</div>
 <div class="scard-sub">Revisá todo antes de confirmar</div>
 <div class="sum-block"><div class="sum-block-title">🍦 Tu pedido</div><div id="sumItems"></div></div>
-<div id="sumDescuentoWrap"></div>
+
 <div class="sum-block"><div class="sum-block-title">📍 Datos de envío</div><div id="sumEnvioInfo"></div></div>
 <div class="sum-block"><div class="sum-block-title">💳 Medio de pago</div>
   <select class="form-input" id="webPago">
@@ -644,7 +641,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 </div>
 </div><!-- /heladosSection -->
 <!-- TOAST -->
-<input id="fRef" type="hidden"/><input id="fRefR" type="hidden"/>
+
 <div class="toast" id="toast"></div>
 
 <button class="floating-cart" id="floatingCart" onclick="abrirCarritoGlobal()">
@@ -743,7 +740,7 @@ function dmGetCheckoutData(){
   return {medioPago,delivery,nombre,telefono,direccion,referencias,nota};
 }
 
-function dmPayloadPedido(desc=0){
+function dmPayloadPedido(){
   const c=dmGetCheckoutData();
   const grouped=[];
   const prodMap=new Map();
@@ -770,7 +767,6 @@ function dmPayloadPedido(desc=0){
   prodMap.forEach(v=>grouped.push(v));
 
   const extras=[];
-  if(desc>0) extras.push({tipo:'descuento',nombre:'Descuento web',cantidad:1,precio:-Math.abs(desc)});
 
   const mapsLink=c.delivery && c.direccion
     ? 'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent('Luis Santiago Genoud 2102, Florencio Varela, Buenos Aires, Argentina')+'&destination='+encodeURIComponent(c.direccion)
@@ -799,13 +795,13 @@ function dmPayloadPedido(desc=0){
   };
 }
 
-async function dmRegistrarPedido(desc=0){
+async function dmRegistrarPedido(){
   if(!cart.length) return {ok:false,error:'Pedido vacío'};
   try{
     const r=await fetch(DM_API_URL,{
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify(dmPayloadPedido(desc))
+      body:JSON.stringify(dmPayloadPedido())
     });
     const data=await r.json();
     if(!data || data.ok!==true) throw new Error((data&&data.error)||'No se pudo guardar el pedido');
@@ -941,13 +937,19 @@ const PRODUCTOS_EXTRA=[
   {id:'franui-free',categoria:'franui',name:'Franui Free',desc:'Franui',price:9000,icon:'🍓',img:'assets/img-9558f2e20003.webp',stock:4}
 
 ,
-  {id:'paleta-cuore',categoria:'paletas-crema',name:'Paleta Cuore',desc:'Paleta en forma de corazón, cremosa y bañada en chocolate.',price:1850,stock:16,icon:'💗',img:'assets/img-59d9accae723.webp'},
+  {id:'paleta-cuore',categoria:'paletas-crema',name:'Paleta Cuore',desc:'Paleta en forma de corazón, cremosa y bañada en chocolate.',price:1950,stock:16,icon:'💗',img:'assets/img-59d9accae723.webp'},
   {id:'paleta-crocante',categoria:'paletas-crema',name:'Bombón crocante',desc:'Bombón crocante relleno de crema americana.',price:1200,stock:24,icon:'🍫',img:'assets/img-4e10d82e93fa.webp'},
-  {id:'paleta-bombon-ddl',categoria:'paletas-crema',name:'Paleta Bombón de dulce de leche',desc:'Bombón de chocolate relleno de helado de dulce de leche.',price:1000,icon:'🍫',img:'assets/img-22954b5cc0a2.webp'},
-  {id:'paleta-joy',categoria:'paletas-crema',name:'Palito Joy',desc:'Palito cremoso, dulce y bien tentador.',price:1100,stock:20,icon:'🍦',img:'assets/img-b7809ffd3efe.webp'},
+  {id:'paleta-bombon',categoria:'paletas-crema',name:'Bombón de americana',desc:'Bombón cremoso de americana bañado en chocolate.',price:1100,icon:'🍫'},
+  {id:'cono-americana',categoria:'paletas-crema',name:'Cono Americana',desc:'Crema americana, corazón de dulce de leche y cobertura de chocolate semi amargo.',price:2400,icon:'🍦',img:'assets/cono-americana.png'},
+  {id:'cono-dulce-de-leche',categoria:'paletas-crema',name:'Cono Dulce de Leche',desc:'Dulce de leche, corazón de dulce de leche y cobertura de chocolate blanco.',price:2400,icon:'🍦',img:'assets/cono-dulce-de-leche.png'},
+  {id:'cono-chocolate',categoria:'paletas-crema',name:'Cono Chocolate',desc:'Chocolate, corazón de dulce de leche y cobertura de chocolate semi amargo.',price:2400,icon:'🍦',img:'assets/cono-chocolate.png'},
+  {id:'palito-crema-choco-ddl',categoria:'paletas-crema',name:'Palito de crema chocolate y dulce de leche',desc:'Palito de crema sabor chocolate y dulce de leche.',price:900,icon:'🍦',img:'assets/palito-crema-choco-ddl.png'},
+  {id:'palito-agua-anana',categoria:'paletas-agua',name:'Palito de agua ananá',desc:'Palito al agua sabor ananá.',price:500,icon:'🍍',img:'assets/palito-agua-anana.png'},
+  {id:'paleta-bombon-ddl',categoria:'paletas-crema',name:'Paleta Bombón de dulce de leche',desc:'Bombón de chocolate relleno de helado de dulce de leche.',price:1100,icon:'🍫',img:'assets/img-22954b5cc0a2.webp'},
+  {id:'paleta-joy',categoria:'paletas-crema',name:'Palito Joy',desc:'Palito cremoso, dulce y bien tentador.',price:1300,stock:20,icon:'🍦',img:'assets/img-b7809ffd3efe.webp'},
   {id:'paleta-crema-granizado',categoria:'paletas-crema',name:'Palito crema granizado',desc:'Crema suave con trocitos de chocolate.',price:950,icon:'🍦',img:'assets/img-866b179fdc4d.webp'},
-  {id:'paleta-crema',categoria:'paletas-crema',name:'Helado de crema combinado',desc:'Helado de vainilla y choco.',price:850,icon:'🍦',img:'assets/img-d8285ff41af5.webp'},
-  {id:'paleta-max-bombon',categoria:'paletas-crema',name:'MAX',desc:'Paleta MAX rosa, cremosa y bien tentadora.',price:1900,stock:16,icon:'🍦',img:'assets/img-17d7c9b5da83.webp'},
+  {id:'paleta-crema',categoria:'paletas-crema',name:'Helado de crema combinado',desc:'Helado de vainilla y choco.',price:900,icon:'🍦',img:'assets/img-d8285ff41af5.webp'},
+  {id:'paleta-max-bombon',categoria:'paletas-crema',name:'MAX',desc:'Paleta MAX rosa, cremosa y bien tentadora.',price:2000,stock:16,icon:'🍦',img:'assets/img-17d7c9b5da83.webp'},
   {id:'paleta-agua-frutilla',categoria:'paletas-agua',name:'Paleta al agua · Frutilla',desc:'Refrescante paleta al agua sabor frutilla.',price:500,icon:'🍓',img:'assets/img-4ca3b544f5d2.webp',stock:40},
   {id:'paleta-agua-uva',categoria:'paletas-agua',name:'Paleta al agua · Uva',desc:'Refrescante paleta al agua sabor uva.',price:500,icon:'🍇',img:'assets/img-fa71652eb04d.webp',stock:40},
   {id:'paleta-agua-limon',categoria:'paletas-agua',name:'Paleta al agua · Limón',desc:'Refrescante paleta al agua sabor limón.',price:500,icon:'🍋',img:'assets/img-c0909bb1fb9a.webp',stock:40},
@@ -1675,7 +1677,7 @@ function selectEntrega(mode){
 
 function buildResumen(){
   const sub=cart.reduce((s,i)=>s+i.price,0);
-  const desc=0;const hasRef=false;const ref='';
+  const desc=0;
   document.getElementById('sumItems').innerHTML=cart.map(item=>{
     if(item.kind==='producto'){
       return `<div class="sum-item">
@@ -1695,10 +1697,8 @@ function buildResumen(){
       <div class="sum-item-price">$${fmt(item.price)}</div>
     </div>`;
   }).join('');
-  document.getElementById('sumDescuentoWrap').innerHTML=desc>0
-    ?`<div class="descuento-row"><span class="descuento-lbl">✅ Descuento código referido</span><span class="descuento-val">-$${fmt(desc)}</span></div>`:'';
   const envio=costoEnvioActual();
-  document.getElementById('sumTotalAmt').textContent='$'+fmt(sub-desc+envio);
+  document.getElementById('sumTotalAmt').textContent='$'+fmt(sub+envio);
   let envH='';
   if(entregaMode==='delivery'){
     const n=document.getElementById('fNombre').value||'-',d=document.getElementById('fDireccion').value||'-';
@@ -1709,28 +1709,21 @@ function buildResumen(){
       <div class="sum-row"><span class="k">Dirección</span><span class="v">${d}${e?' (entre '+e+')':''}</span></div>
       ${b?`<div class="sum-row"><span class="k">Barrio</span><span class="v">${b}</span></div>`:''}
       <div class="sum-row"><span class="k">Teléfono</span><span class="v">${t}</span></div>
-      ${hasRef?`<div class="sum-row"><span class="k">Cód. referido</span><span class="v" style="color:var(--teal)">${ref} ✓</span></div>`:''}
       ${no?`<div class="sum-row"><span class="k">Nota</span><span class="v">${no}</span></div>`:''}`;
   } else {
     const n=document.getElementById('fNombreR').value||'-',t=document.getElementById('fTelR').value||'-';
     envH=`<div class="sum-row"><span class="k">Modalidad</span><span class="v">🏠 Retiro</span></div>
       <div class="sum-row"><span class="k">Nombre</span><span class="v">${n}</span></div>
       <div class="sum-row"><span class="k">Dirección</span><span class="v">Luis Santiago Genoud 2102</span></div>
-      <div class="sum-row"><span class="k">Teléfono</span><span class="v">${t}</span></div>
-      ${hasRef?`<div class="sum-row"><span class="k">Cód. referido</span><span class="v" style="color:var(--teal)">${ref} ✓</span></div>`:''}`;
+      <div class="sum-row"><span class="k">Teléfono</span><span class="v">${t}</span></div>`;
   }
   document.getElementById('sumEnvioInfo').innerHTML=envH;
 }
 
 async function confirmar(){
   const sub=cart.reduce((s,i)=>s+i.price,0);
-  const ref=entregaMode==='delivery'
-    ?document.getElementById('fRef').value.trim().toUpperCase()
-    :document.getElementById('fRefR').value.trim().toUpperCase();
-  const hasRef=ref.length>0&&ref!==clientCode;
-  const desc=hasRef?Math.round(sub*.1):0;
   const envio=costoEnvioActual();
-  const total=sub-desc+envio;
+  const total=sub+envio;
   const now=new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 
   let msg='';
@@ -1831,7 +1824,6 @@ async function confirmar(){
 
   msg+='\n━━━━━━━━━━━━━━━━━━━━\n';
   msg+='💰 *Subtotal productos: $'+fmt(sub)+'*\n';
-  if(desc>0) msg+='🏷️ Descuento: -$'+fmt(desc)+'\n';
   if(entregaMode==='delivery'){
     msg+='🛵 *Envío: '+(envioPrecio===null?'A consultar':'$'+fmt(envio))+'*\n';
   }
@@ -1851,7 +1843,7 @@ async function confirmar(){
   const oldTxt=btn?btn.textContent:'';
   if(btn){btn.disabled=true;btn.textContent='Guardando pedido...';}
 
-  const guardado=await dmRegistrarPedido(desc);
+  const guardado=await dmRegistrarPedido();
 
   if(btn){btn.disabled=false;btn.textContent=oldTxt||'📲 Confirmar por WhatsApp';}
 
@@ -1938,7 +1930,7 @@ dmSyncStock();
 
 function compartirCodigo(){
   const clientCode=safeStorageGet('dm_code')||'';
-  const txt='Pedí helado artesanal en Dulce Mora 🍦 Usá mi código '+clientCode+' y ambos tenemos 10% off! 🐾';
+  const txt='Pedí helado artesanal en Dulce Mora 🍦 🐾';
   if(navigator.share)navigator.share({text:txt});
   else{navigator.clipboard.writeText(txt).then(()=>toast('Mensaje copiado! 📋'));}
 }
