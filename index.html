@@ -407,6 +407,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 
 .pote-bonus{display:block;margin-top:5px;font-size:10px;font-weight:900;color:var(--orange);line-height:1.25;}
 </style>
+<!-- Dulce Mora web: nuevos gustos + envío a consultar · 2026-11-21 -->
 </head>
 <body>
 <div aria-hidden="true" class="sprinkles-layer" id="sprinklesLayer"></div>
@@ -578,10 +579,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 <div class="form-group"><label class="form-label" id="fNombreLabel">Nombre y apellido *</label><input class="form-input" id="fNombre" placeholder="Nombre y apellido" type="text"/></div>
 <div class="form-group"><label class="form-label" id="fDireccionLabel">Dirección *</label><input class="form-input" id="fDireccion" placeholder="Calle y número" type="text"/></div>
 <div class="form-group">
-  <label class="form-label">Calcular envío</label>
-  <button type="button" class="btn-main outline" onclick="usarMiUbicacion()" style="margin-bottom:7px;">📍 Usar mi ubicación</button>
-  <button type="button" class="btn-main outline" onclick="calcularPorDireccion()">🔎 Calcular con la dirección escrita</button>
-  <div id="envioCalcInfo" style="font-size:16px;font-weight:1000;color:var(--teal);margin-top:8px;line-height:1.4;">Todavía no calculamos la distancia.</div>
+  <div style="background:#fff4f8;border:2px solid var(--pink);border-radius:14px;padding:13px 14px;font-size:15px;font-weight:900;color:var(--brown);line-height:1.35;">
+    🛵 Costo de envío: <strong>a consultar</strong>
+  </div>
 </div>
 <div class="form-group"><label class="form-label">Entre calles</label><input class="form-input" id="fEntreCalles" placeholder="Entre ... y ..." type="text"/></div>
 <div class="form-group"><label class="form-label">Barrio</label><input class="form-input" id="fBarrio" placeholder="Barrio o zona" type="text"/></div>
@@ -780,7 +780,7 @@ function dmPayloadPedido(){
       extras,
       con_envio:c.delivery,
       costo_envio:costoEnvioActual(),
-      distancia_km:envioDistKm===null?'':envioDistKm,
+      distancia_km:'',
       medio_pago:c.medioPago,
       cliente:c.nombre,
       telefono:c.telefono,
@@ -908,6 +908,10 @@ const GUSTOS=[
   {id:'g23',name:'Cereza',ticketName:'Cereza',icon:'🍒',cat:'cremoso',hot:false,stock:'ok',img:'assets/img-e1f388df1686.webp'},
   {id:'g24',name:'Granizado',ticketName:'Granizado',icon:'🍫',cat:'cremoso',hot:false,stock:'ok',img:'assets/img-f56f98feddd0.webp'},
   {id:'g25',name:'Menta granizada',ticketName:'Menta granizada',icon:'🌿',cat:'cremoso',hot:false,stock:'ok',img:'assets/img-b288b7be9298.webp'},
+  {id:'g26',name:'Dulce de leche con nuez',ticketName:'Dulce de leche con nuez',icon:'🌰',cat:'cremoso',hot:false,stock:'ok',img:'assets/gusto-dulce-de-leche-con-nuez.webp'},
+  {id:'g27',name:'Franui Perla del Sur',ticketName:'Franui Perla del Sur',icon:'🍓',cat:'especial',hot:false,stock:'ok',img:'assets/gusto-franui-perla-del-sur.webp'},
+  {id:'g28',name:'Limón tropical al agua',ticketName:'Limón tropical al agua',icon:'🍋',cat:'agua',hot:false,stock:'ok',img:'assets/gusto-limon-tropical-al-agua.webp'},
+  {id:'g29',name:'Frutos del bosque al agua',ticketName:'Frutos del bosque al agua',icon:'🫐',cat:'agua',hot:false,stock:'ok',img:'assets/gusto-frutos-del-bosque-al-agua.webp'},
 ];
 const TOPPINGS=[
   {id:'t2',name:'Salsa de chocolate', icon:'🍫',price:0},
@@ -939,7 +943,7 @@ const PRODUCTOS_EXTRA=[
 ,
   {id:'paleta-cuore',categoria:'paletas-crema',name:'Paleta Cuore',desc:'Paleta en forma de corazón, cremosa y bañada en chocolate.',price:1950,stock:16,icon:'💗',img:'assets/img-59d9accae723.webp'},
   {id:'paleta-crocante',categoria:'paletas-crema',name:'Bombón crocante',desc:'Bombón crocante relleno de crema americana.',price:1200,stock:24,icon:'🍫',img:'assets/img-4e10d82e93fa.webp'},
-  {id:'paleta-bombon',categoria:'paletas-crema',name:'Bombón de americana',desc:'Bombón cremoso de americana bañado en chocolate.',price:1100,icon:'🍫'},
+  {id:'paleta-bombon',categoria:'paletas-crema',name:'Bombón de americana',desc:'Bombón cremoso de americana bañado en chocolate.',price:1100,icon:'🍫',img:'assets/img-9038b47d19c8.webp'},
   {id:'cono-americana',categoria:'paletas-crema',name:'Cono Americana',desc:'Crema americana, corazón de dulce de leche y cobertura de chocolate semi amargo.',price:2400,icon:'🍦',img:'assets/cono-americana.png'},
   {id:'cono-dulce-de-leche',categoria:'paletas-crema',name:'Cono Dulce de Leche',desc:'Dulce de leche, corazón de dulce de leche y cobertura de chocolate blanco.',price:2400,icon:'🍦',img:'assets/cono-dulce-de-leche.png'},
   {id:'cono-chocolate',categoria:'paletas-crema',name:'Cono Chocolate',desc:'Chocolate, corazón de dulce de leche y cobertura de chocolate semi amargo.',price:2400,icon:'🍦',img:'assets/cono-chocolate.png'},
@@ -1662,10 +1666,7 @@ async function calcularPorDireccion(){
     mostrarCalculoEnvio(haversineKm(c.lat,c.lon,t.lat,t.lon));
   }catch(e){if(el)el.textContent='No encontramos esa dirección. Probá escribiéndola más completa.';}
 }
-function costoEnvioActual(){
-  if(entregaMode!=='delivery')return 0;
-  return typeof envioPrecio==='number'?envioPrecio:0;
-}
+function costoEnvioActual(){ return 0; }
 
 function selectEntrega(mode){
   entregaMode=mode;
@@ -1709,6 +1710,7 @@ function buildResumen(){
       <div class="sum-row"><span class="k">Dirección</span><span class="v">${d}${e?' (entre '+e+')':''}</span></div>
       ${b?`<div class="sum-row"><span class="k">Barrio</span><span class="v">${b}</span></div>`:''}
       <div class="sum-row"><span class="k">Teléfono</span><span class="v">${t}</span></div>
+      <div class="sum-row"><span class="k">Envío</span><span class="v">A consultar</span></div>
       ${no?`<div class="sum-row"><span class="k">Nota</span><span class="v">${no}</span></div>`:''}`;
   } else {
     const n=document.getElementById('fNombreR').value||'-',t=document.getElementById('fTelR').value||'-';
