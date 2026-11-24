@@ -43,9 +43,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 /* COUNTDOWN */
 .countdown-bar{background:var(--brown);display:flex;align-items:center;justify-content:center;gap:10px;padding:9px 16px;flex-wrap:wrap;}
 .cd-text{font-size:12px;color:var(--sky);font-weight:700;}
-.cd-timer{display:flex;align-items:center;gap:4px;}
-.cd-seg{background:var(--pink);color:#fff;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:900;min-width:28px;text-align:center;}
-.cd-sep{color:var(--pink);font-weight:900;font-size:14px;}
 .cd-closed{background:var(--brown-mid);color:rgba(255,255,255,.7);font-size:12px;font-weight:700;text-align:center;padding:9px;}
 
 /* STRIP */
@@ -406,8 +403,60 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 
 
 .pote-bonus{display:block;margin-top:5px;font-size:10px;font-weight:900;color:var(--orange);line-height:1.25;}
+
+
+.novedades-local{max-width:1180px;margin:14px auto 8px;padding:0 16px}
+.novedades-banner{
+  width:100%;border:0;border-radius:18px;padding:13px 16px;background:linear-gradient(90deg,#fff0f6,#eefbff);
+  display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;text-align:left;
+  box-shadow:0 4px 14px rgba(68,40,50,.08);border:2px solid #f3d9e5
+}
+.novedades-banner-left{display:flex;align-items:center;gap:12px;min-width:0}
+.novedades-banner-icon{font-size:28px;flex:0 0 auto}
+.novedades-banner-text{min-width:0}
+.novedades-banner-title{font-size:18px;line-height:1.05;font-weight:1000;color:#442832}
+.novedades-banner-sub{font-size:12px;line-height:1.35;color:#765d67;font-weight:800;margin-top:4px}
+.novedades-banner-cta{flex:0 0 auto;background:#eb6893;color:#fff;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:1000}
+.novedades-modal{
+  position:fixed;inset:0;background:rgba(40,22,30,.58);z-index:9999;display:none;align-items:center;justify-content:center;padding:18px
+}
+.novedades-modal.open{display:flex}
+.novedades-modal-card{
+  width:min(940px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:24px;padding:18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.24)
+}
+.novedades-modal-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+.novedades-modal-title{font-size:28px;line-height:1.02;color:#442832;font-weight:1000}
+.novedades-modal-sub{font-size:14px;color:#765d67;font-weight:800;margin-top:5px}
+.novedades-close{width:42px;height:42px;border:0;border-radius:50%;background:#f7edf1;color:#442832;font-size:22px;font-weight:1000;cursor:pointer}
+.novedades-only-local{display:inline-block;margin:0 0 14px;background:#442832;color:#fff;border-radius:999px;padding:8px 14px;font-size:12px;font-weight:1000}
+.novedades-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.novedad-card{background:#fff;border:2px solid #f2dbe4;border-radius:18px;overflow:hidden;min-width:0}
+.novedad-card img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#f8eef2}
+.novedad-body{padding:12px 13px 14px}
+.novedad-name{font-size:19px;line-height:1.05;font-weight:1000;color:#442832}
+.novedad-desc{font-size:13px;line-height:1.45;color:#765d67;font-weight:750;margin-top:7px}
+.novedad-note{margin-top:9px;font-size:12px;font-weight:1000;color:#bb3162}
+.bocha-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#fff}
+.bocha-gallery img{aspect-ratio:1/1;object-fit:cover}
+@media(max-width:700px){
+  .novedades-grid{grid-template-columns:1fr}
+  .novedades-banner{padding:11px 12px}
+  .novedades-banner-icon{font-size:24px}
+  .novedades-banner-title{font-size:16px}
+  .novedades-banner-sub{font-size:11px}
+  .novedades-banner-cta{padding:7px 10px;font-size:11px}
+  .novedades-modal-card{padding:14px}
+  .novedades-modal-title{font-size:23px}
+}
+.novedades-local{padding:0 12px}.novedad-card img{aspect-ratio:16/10}}
+
 </style>
 <!-- Dulce Mora web: nuevos gustos + envío a consultar · 2026-11-21 -->
+<!-- Dulce Mora web · novedades local + catálogo actualizado · 2026-11-23 -->
+<!-- Dulce Mora web · fotos nuevas de paletas/combinados · 2026-11-23 -->
+<!-- Dulce Mora · estado de apertura sin cuenta regresiva -->
+<!-- Dulce Mora · novedades compactas en banner con detalle al tocar -->
 </head>
 <body>
 <div aria-hidden="true" class="sprinkles-layer" id="sprinklesLayer"></div>
@@ -440,6 +489,77 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 <div class="sitem">🥤 <em>Vie y sáb hasta 23:30</em></div>
 <div class="sitem">📲 <em>11 7894-7062</em></div>
 </div>
+
+<!-- NOVEDADES SOLO EN EL LOCAL -->
+<section class="novedades-local" id="novedadesLocal">
+  <button class="novedades-banner" type="button" onclick="abrirNovedadesLocal()" aria-haspopup="dialog">
+    <div class="novedades-banner-left">
+      <div class="novedades-banner-icon">✨</div>
+      <div class="novedades-banner-text">
+        <div class="novedades-banner-title">Novedades en Dulce Mora</div>
+        <div class="novedades-banner-sub">Bochitas, milkshakes, frappuccinos y licuados · solo en el local</div>
+      </div>
+    </div>
+    <div class="novedades-banner-cta">Ver novedades →</div>
+  </button>
+</section>
+
+<div class="novedades-modal" id="novedadesModal" role="dialog" aria-modal="true" aria-labelledby="novedadesModalTitle" onclick="cerrarNovedadesFondo(event)">
+  <div class="novedades-modal-card">
+    <div class="novedades-modal-top">
+      <div>
+        <div class="novedades-modal-title" id="novedadesModalTitle">✨ Novedades en Dulce Mora</div>
+        <div class="novedades-modal-sub">Ahora también en nuestro local</div>
+      </div>
+      <button class="novedades-close" type="button" onclick="cerrarNovedadesLocal()" aria-label="Cerrar">×</button>
+    </div>
+
+    <div class="novedades-only-local">📍 Solo retiro en el local · No disponible para comprar desde la web</div>
+
+    <div class="novedades-grid">
+      <article class="novedad-card">
+        <div class="bocha-gallery">
+          <img src="assets/novedad-bochita-cucurucho.webp" alt="Bochita de helado en cucurucho">
+          <img src="assets/novedad-bochita-vasito.webp" alt="Bochita de helado en vasito">
+          <img src="assets/novedad-bochita-doble.webp" alt="Dos bochitas de helado">
+        </div>
+        <div class="novedad-body">
+          <div class="novedad-name">🍨 Llegaron las bochitas</div>
+          <div class="novedad-desc">Elegí tus gustos favoritos y disfrutalos en cucurucho o vasito.</div>
+          <div class="novedad-note">Solo retiro en el local · Precio a confirmar</div>
+        </div>
+      </article>
+
+      <article class="novedad-card">
+        <img src="assets/novedad-milkshake.webp" alt="Milkshakes Dulce Mora">
+        <div class="novedad-body">
+          <div class="novedad-name">🥤 Milkshake</div>
+          <div class="novedad-desc">Elegí el gusto de helado que quieras. Lo preparamos con helado + leche, bien frío y súper cremoso.</div>
+          <div class="novedad-note">Solo retiro en el local · Precio a confirmar</div>
+        </div>
+      </article>
+
+      <article class="novedad-card">
+        <img src="assets/novedad-frappuccino.webp" alt="Frappuccino Dulce Mora">
+        <div class="novedad-body">
+          <div class="novedad-name">☕ Frappuccino</div>
+          <div class="novedad-desc">Bien frío, cremoso y pensado para darte un gustito distinto en Dulce Mora.</div>
+          <div class="novedad-note">Vaso 480 cc · Solo retiro · Precio a confirmar</div>
+        </div>
+      </article>
+
+      <article class="novedad-card">
+        <img src="assets/novedad-licuado.webp" alt="Licuados de banana y frutilla Dulce Mora">
+        <div class="novedad-body">
+          <div class="novedad-name">🍓 Licuados</div>
+          <div class="novedad-desc">Banana o frutilla. Podés pedirlo con leche o al agua.</div>
+          <div class="novedad-note">Vaso 480 cc · Solo retiro · Precio a confirmar</div>
+        </div>
+      </article>
+    </div>
+  </div>
+</div>
+
 <!-- INICIO DE CATEGORÍAS -->
 <section class="catalog-home" id="catalogHome">
   <div class="catalog-home-title">¿Qué querés pedir hoy?</div>
@@ -710,8 +830,10 @@ async function dmSyncStock(){
 function dmProductoDisponible(id){
   const s=DM_REMOTE_STOCK[id];
   if(!s) return true;
+  const status=String(s.status||'').toUpperCase();
+  if(s.activeWeb===false || status==='OCULTO') return false;
   if(typeof s.stock==='number') return s.stock>0;
-  return String(s.status||'').toUpperCase()!=='SIN STOCK';
+  return status!=='SIN STOCK';
 }
 
 function dmStockTexto(id){
@@ -927,34 +1049,32 @@ const WA_LINK='https://wa.me/5491178947062';
 
 const PRODUCTOS_EXTRA=[
   {id:'hielo-2kg',categoria:'hielo',name:'Hielo · 2 kg',desc:'Bolsa de hielo con agua purificada · 2 kg',price:3500,icon:'🧊',img:'assets/img-3e51d9755dd1.webp'},
-  {id:'banana-bites-leche',categoria:'banana',name:'Le Banana Bites · Chocolate con leche',desc:'Banana Bites bañados en chocolate con leche · 150 g',price:10000,stock:6,icon:'🍌',img:'assets/img-f5ee8b57c72a.webp'},
-{id:'banana-bites-semi',categoria:'banana',name:'Le Banana Bites · Chocolate semi amargo',desc:'Banana Bites bañados en chocolate semi amargo · 150 g',price:10000,stock:6,icon:'🍌',img:'assets/img-3508a56c8d02.webp'},
-  {id:'guapa-frutilla-leche',categoria:'guapaletas',name:'Frutilla y leche condensada',desc:'Guapaleta de frutilla y leche condensada · Sin TACC',price:6500,stock:2,icon:'🍓',img:'assets/img-941a071552fd.webp'},
+  {id:'banana-bites-leche',categoria:'banana',name:'Le Banana Bites · Chocolate con leche',desc:'Banana Bites bañados en chocolate con leche · 150 g',price:9000,icon:'🍌',img:'assets/img-f5ee8b57c72a.webp'},
+{id:'banana-bites-semi',categoria:'banana',name:'Le Banana Bites · Chocolate semi amargo',desc:'Banana Bites bañados en chocolate semi amargo · 150 g',price:9000,icon:'🍌',img:'assets/img-3508a56c8d02.webp'},
   {id:'guapa-choco-ddl',categoria:'guapaletas',name:'Chocolate y dulce de leche',desc:'Guapaleta de chocolate con dulce de leche en su interior · Sin TACC',price:6500,stock:6,icon:'🍫',img:'assets/img-31ae7abb5f51.webp'},
-  {id:'guapa-multifruta',categoria:'guapaletas',name:'Multifruta',desc:'Guapaleta multifruta · Sin TACC',price:6500,stock:5,icon:'🍉',img:'assets/img-466cc9a6ab18.webp'},
-  {id:'guapa-banana-split',categoria:'guapaletas',name:'Banana Split',desc:'Guapaleta sabor banana split · Sin TACC',price:6500,stock:6,icon:'🍌',img:'assets/img-b0f702e62807.webp'},
   {id:'guapa-limon-jengibre',categoria:'guapaletas',name:'Limonada, menta & jengibre',desc:'Guapaleta de limonada, menta y jengibre · Sin TACC',price:6500,stock:6,icon:'🍋',img:'assets/img-2193d38dbb6f.webp'},
-  {id:'guapaleta-super-ddl',categoria:'guapaletas',name:'Súper dulce de leche',desc:'Guapaleta rellena de dulce de leche · Sin TACC',price:6500,stock:3,icon:'🍯',img:'assets/img-9aa92b73987a.webp'},
   {id:'franui-leche',categoria:'franui',name:'Franui Leche',desc:'Franui',price:9000,icon:'🍫',img:'assets/img-f9cd72766d6b.webp',stock:2},
   {id:'franui-pink',categoria:'franui',name:'Franui Pink',desc:'Franui',price:9000,icon:'🍓',img:'assets/img-ce289dc2ab64.webp',stock:4},
-  {id:'franui-amargo',categoria:'franui',name:'Franui Amargo',desc:'Franui',price:9000,icon:'🍫',img:'assets/img-ab50c37699be.webp',stock:3},
   {id:'franui-free',categoria:'franui',name:'Franui Free',desc:'Franui',price:9000,icon:'🍓',img:'assets/img-9558f2e20003.webp',stock:4}
 
 ,
-  {id:'paleta-cuore',categoria:'paletas-crema',name:'Paleta Cuore',desc:'Paleta en forma de corazón, cremosa y bañada en chocolate.',price:1950,stock:16,icon:'💗',img:'assets/img-59d9accae723.webp'},
+  {id:'paleta-cuore',categoria:'paletas-crema',name:'Cuore',desc:'Paleta Cuore clásica.',price:1950,icon:'💗',img:'assets/img-59d9accae723.webp'},
   {id:'paleta-crocante',categoria:'paletas-crema',name:'Bombón crocante',desc:'Bombón crocante relleno de crema americana.',price:1200,stock:24,icon:'🍫',img:'assets/img-4e10d82e93fa.webp'},
   {id:'paleta-bombon',categoria:'paletas-crema',name:'Bombón de americana',desc:'Bombón cremoso de americana bañado en chocolate.',price:1100,icon:'🍫',img:'assets/img-9038b47d19c8.webp'},
   {id:'cono-americana',categoria:'paletas-crema',name:'Cono Americana',desc:'Crema americana, corazón de dulce de leche y cobertura de chocolate semi amargo.',price:2400,icon:'🍦',img:'assets/cono-americana.png'},
   {id:'cono-dulce-de-leche',categoria:'paletas-crema',name:'Cono Dulce de Leche',desc:'Dulce de leche, corazón de dulce de leche y cobertura de chocolate blanco.',price:2400,icon:'🍦',img:'assets/cono-dulce-de-leche.png'},
   {id:'cono-chocolate',categoria:'paletas-crema',name:'Cono Chocolate',desc:'Chocolate, corazón de dulce de leche y cobertura de chocolate semi amargo.',price:2400,icon:'🍦',img:'assets/cono-chocolate.png'},
-  {id:'palito-crema-choco-ddl',categoria:'paletas-crema',name:'Palito de crema chocolate y dulce de leche',desc:'Palito de crema sabor chocolate y dulce de leche.',price:900,icon:'🍦',img:'assets/palito-crema-choco-ddl.png'},
   {id:'palito-agua-anana',categoria:'paletas-agua',name:'Palito de agua ananá',desc:'Palito al agua sabor ananá.',price:500,icon:'🍍',img:'assets/palito-agua-anana.png'},
   {id:'paleta-bombon-ddl',categoria:'paletas-crema',name:'Paleta Bombón de dulce de leche',desc:'Bombón de chocolate relleno de helado de dulce de leche.',price:1100,icon:'🍫',img:'assets/img-22954b5cc0a2.webp'},
-  {id:'paleta-joy',categoria:'paletas-crema',name:'Palito Joy',desc:'Palito cremoso, dulce y bien tentador.',price:1300,stock:20,icon:'🍦',img:'assets/img-b7809ffd3efe.webp'},
-  {id:'paleta-crema-granizado',categoria:'paletas-crema',name:'Palito crema granizado',desc:'Crema suave con trocitos de chocolate.',price:950,icon:'🍦',img:'assets/img-866b179fdc4d.webp'},
-  {id:'paleta-crema',categoria:'paletas-crema',name:'Helado de crema combinado',desc:'Helado de vainilla y choco.',price:900,icon:'🍦',img:'assets/img-d8285ff41af5.webp'},
-  {id:'paleta-max-bombon',categoria:'paletas-crema',name:'MAX',desc:'Paleta MAX rosa, cremosa y bien tentadora.',price:2000,stock:16,icon:'🍦',img:'assets/img-17d7c9b5da83.webp'},
-  {id:'paleta-agua-frutilla',categoria:'paletas-agua',name:'Paleta al agua · Frutilla',desc:'Refrescante paleta al agua sabor frutilla.',price:500,icon:'🍓',img:'assets/img-4ca3b544f5d2.webp',stock:40},
+  {id:'paleta-joy',categoria:'paletas-crema',name:'Palito Joy',desc:'Sabor dulce de leche.',price:1300,icon:'🍦',img:'assets/img-b7809ffd3efe.webp'},
+  {id:'paleta-crema-granizado',categoria:'paletas-crema',name:'Palito crema granizado',desc:'Crema suave con trocitos de chocolate.',price:1000,icon:'🍦',img:'assets/img-866b179fdc4d.webp'},
+  {id:'paleta-crema',categoria:'paletas-crema',name:'Combinado · Vainilla y chocolate',desc:'Palito combinado de vainilla y chocolate.',price:900,icon:'🍦',img:'assets/img-d8285ff41af5.webp'},
+  {id:'paleta-max-bombon',categoria:'paletas-crema',name:'MAX · Frutos rojos',desc:'Paleta MAX sabor frutos rojos.',price:2000,icon:'🍦',img:'assets/img-17d7c9b5da83.webp'},
+  {id:'paleta-combinado-ddl-choco',categoria:'paletas-crema',name:'Combinado · Dulce de leche y chocolate',desc:'Palito combinado de dulce de leche y chocolate.',price:900,icon:'🍦',img:'assets/paleta-combinado-ddl-choco.webp'},
+  {id:'paleta-combinado-frutilla-vainilla',categoria:'paletas-crema',name:'Combinado · Frutilla y vainilla',desc:'Palito combinado de frutilla y vainilla.',price:900,icon:'🍦',img:'assets/paleta-combinado-frutilla-vainilla.webp'},
+  {id:'paleta-max-chocolate',categoria:'paletas-crema',name:'MAX · Chocolate',desc:'Paleta MAX sabor chocolate.',price:2000,icon:'🍫',img:'assets/paleta-max-chocolate.webp'},
+  {id:'paleta-max-blanco',categoria:'paletas-crema',name:'MAX · Blanco',desc:'Paleta MAX blanco.',price:2000,icon:'🤍',img:'assets/paleta-max-blanco.webp'},
+  {id:'paleta-cuore-blanco',categoria:'paletas-crema',name:'Cuore Blanco',desc:'Paleta Cuore blanca.',price:1950,icon:'🤍',img:'assets/paleta-cuore-blanco.webp'},
   {id:'paleta-agua-uva',categoria:'paletas-agua',name:'Paleta al agua · Uva',desc:'Refrescante paleta al agua sabor uva.',price:500,icon:'🍇',img:'assets/img-fa71652eb04d.webp',stock:40},
   {id:'paleta-agua-limon',categoria:'paletas-agua',name:'Paleta al agua · Limón',desc:'Refrescante paleta al agua sabor limón.',price:500,icon:'🍋',img:'assets/img-c0909bb1fb9a.webp',stock:40},
   {id:'paleta-agua-naranja',categoria:'paletas-agua',name:'Paleta al agua · Naranja',desc:'Refrescante paleta al agua sabor naranja.',price:500,icon:'🍊',img:'assets/img-a0c0c46b8d6e.webp',stock:40},
@@ -965,10 +1085,8 @@ const PRODUCTOS_EXTRA=[
   {id:'postre-chico-chocotorta',categoria:'postrecitos-chicos',name:'Chocotorta · Chico',desc:'Postrecito cuchareable tamaño chico.',price:4500,stock:0,icon:'🥄',img:'assets/img-b8d0801b04aa.webp'},
   {id:'postre-chico-lemon-pie',categoria:'postrecitos-chicos',name:'Lemon Pie · Chico',desc:'Postrecito cuchareable tamaño chico.',price:4500,stock:0,icon:'🥄',img:'assets/img-d99d1ace1b50.webp'},
   {id:'postre-chico-tiramisu',categoria:'postrecitos-chicos',name:'Tiramisú · Chico',desc:'Postrecito cuchareable tamaño chico.',price:4500,stock:0,icon:'🥄',img:'assets/img-3f66b7c993e4.webp'},
-{id:'torta-oreo',categoria:'tortas',marca:'A',name:'Torta helada Oreo',desc:'Torta helada sabor Oreo',price:22000,stock:2,icon:'🎂',img:'assets/img-312672c51ce3.webp'},
-  {id:'torta-tartufo',categoria:'tortas',marca:'A',name:'Torta helada Tartufo',desc:'Base de pionono, crema americana, merengue con salsa de chocolate y lluvia crocante.',price:22000,icon:'🎂',img:'assets/img-b4ae299e6758.webp'},
-  {id:'torta-a-frutilla',categoria:'tortas',marca:'A',name:'Torta helada Frutilla',desc:'Torta helada sabor Frutilla.',price:22000,icon:'🎂',img:'assets/torta-22000-frutilla.png'},
-  {id:'torta-a-chocotorta',categoria:'tortas',marca:'A',name:'Torta helada Chocotorta',desc:'Torta helada sabor Chocotorta.',price:22000,icon:'🎂',img:'assets/torta-22000-chocolate.png'},
+    {id:'torta-tiramisu',categoria:'tortas',marca:'A',name:'Torta helada Tiramisú',desc:'Torta helada sabor Tiramisú.',price:22000,icon:'🎂'},
+{id:'torta-tartufo',categoria:'tortas',marca:'A',name:'Torta helada Tartufo',desc:'Base de pionono, crema americana, merengue con salsa de chocolate y lluvia crocante.',price:22000,icon:'🎂',img:'assets/img-b4ae299e6758.webp'},
   {id:'torta-choco-ddl',categoria:'tortas',marca:'B',name:'Torta helada Chocotorta',desc:'Torta helada con crema helada de dulce de leche, dulce de leche y galletitas de chocolate.',price:28000,icon:'🎂',img:'assets/torta-28000-chocolate.png'},
   {id:'torta-cookies-ddl',categoria:'tortas',marca:'B',name:'Torta helada Cookies & Cream',desc:'Torta helada con crema helada sabor americana con dulce de leche y galletitas de chocolate.',price:28000,icon:'🎂',img:'assets/img-ed7ef4c3bad4.webp'},
   {id:'torta-frutilla',categoria:'tortas',marca:'B',name:'Torta helada Frutilla',desc:'Torta helada con crema helada sabor americana, crema helada de frutillas y frutillas.',price:28000,icon:'🎂',img:'assets/torta-28000-frutilla.png'}
@@ -1200,36 +1318,27 @@ function genCode(){const ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c='MORA-';for
 
 function fmt(n){return n.toLocaleString('es-AR');}
 
-// COUNTDOWN
+// ESTADO DEL LOCAL · SIN TEMPORIZADOR
 function initCountdown(){
   const bar=document.getElementById('countdownBar');
-  function tick(){
+
+  function actualizarEstado(){
     const n=new Date();
-    const h=n.getHours(),m=n.getMinutes();
-    const tot=h*60+m;
-    const isTakeAway=tot>=13*60&&tot<23*60;
-    const isDelivery=tot>=16*60&&tot<22*60;
-    if(!isTakeAway){
+    const dia=n.getDay();
+    const minutos=n.getHours()*60+n.getMinutes();
+    const aperturaMin=13*60;
+    const cierreMin=(dia===5||dia===6)?23*60+30:22*60+30;
+
+    if(minutos>=aperturaMin && minutos<cierreMin){
+      const horaCierre=(dia===5||dia===6)?'23:30':'22:30';
+      bar.innerHTML=`<div class="countdown-bar"><span class="cd-text">🟢 Abierto · Cerramos a las ${horaCierre} hs</span></div>`;
+    }else{
       bar.innerHTML='<div class="cd-closed">🕐 Cerrado · Abrimos todos los días a las 13:00 hs</div>';
-      return;
-    }
-    if(isDelivery){
-      const cl=new Date(n);cl.setHours(22,0,0,0);
-      const diff=cl-n;
-      if(diff<=0){bar.innerHTML='<div class="cd-closed">🥤 Envíos cerrados · Take away abierto hasta las 23:00</div>';return;}
-      const mm=String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
-      const ss=String(Math.floor((diff%60000)/1000)).padStart(2,'0');
-      bar.innerHTML=`<div class="countdown-bar"><span class="cd-text">🛵 Delivery abierto · Cierra en</span><div class="cd-timer"><span class="cd-seg">${mm}</span><span class="cd-sep">:</span><span class="cd-seg">${ss}</span></div></div>`;
-    } else {
-      const cl=new Date(n);cl.setHours(23,0,0,0);
-      const diff=cl-n;
-      if(diff<=0){bar.innerHTML='<div class="cd-closed">⏰ Cerrado por hoy. ¡Hasta mañana!</div>';return;}
-      const mm=String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
-      const ss=String(Math.floor((diff%60000)/1000)).padStart(2,'0');
-      bar.innerHTML=`<div class="countdown-bar"><span class="cd-text">🥤 Take away abierto · Cierra en</span><div class="cd-timer"><span class="cd-seg">${mm}</span><span class="cd-sep">:</span><span class="cd-seg">${ss}</span></div></div>`;
     }
   }
-  tick();setInterval(tick,1000);
+
+  actualizarEstado();
+  setInterval(actualizarEstado,60000);
 }
 
 // POTES
@@ -1916,6 +2025,26 @@ function cerrarPotePopup(){
 
 
 
+
+
+function abrirNovedadesLocal(){
+  const m=document.getElementById('novedadesModal');
+  if(!m)return;
+  m.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function cerrarNovedadesLocal(){
+  const m=document.getElementById('novedadesModal');
+  if(!m)return;
+  m.classList.remove('open');
+  document.body.style.overflow='';
+}
+function cerrarNovedadesFondo(e){
+  if(e.target&&e.target.id==='novedadesModal') cerrarNovedadesLocal();
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape') cerrarNovedadesLocal();
+});
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2300);}
 
