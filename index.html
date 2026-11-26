@@ -104,6 +104,14 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 .ctab.on-pu{background:var(--purple);border-color:var(--purple);color:#fff;}
 .ctab.on-te{background:var(--teal);border-color:var(--teal);color:#fff;}
 .gustos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;position:relative;z-index:1;}
+.gustos-grid{display:block;}
+.gustos-grupo{margin-bottom:18px;}
+.gustos-grupo-titulo{margin:0 0 9px;padding:9px 13px;border-radius:12px;background:linear-gradient(100deg,#eb6893,#add2db);color:#fff;font-weight:900;font-size:15px;text-align:left;}
+.gustos-grupo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.gustos-grupo:nth-of-type(2) .gustos-grupo-titulo{background:#bb3162}
+.gustos-grupo:nth-of-type(3) .gustos-grupo-titulo{background:#e28928}
+.gustos-grupo:nth-of-type(4) .gustos-grupo-titulo{background:#442832}
+.gustos-grupo:nth-of-type(5) .gustos-grupo-titulo{background:#36aac3}
 .gusto-opt{border:1.5px solid #e8dce4;background:var(--white);border-radius:13px;padding:0 0 8px;cursor:pointer;text-align:center;transition:all .15s;position:relative;overflow:hidden;}
 .gusto-opt:hover:not(.disabled){border-color:var(--pink);background:var(--pink-xlight);}
 .gusto-opt.sel{border-color:var(--pink);background:var(--pink-light);}
@@ -485,7 +493,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 <div id="countdownBar"></div>
 <div class="strip">
 <div class="sitem">📍 <em>Luis Santiago Genoud 2102</em></div>
-<div class="sitem">🛵 <em>Dom–Jue 13:00–22:30</em></div>
+<div class="sitem">🛵 <em>Dom–Jue 13:00–23:00</em></div>
 <div class="sitem">🥤 <em>Vie y sáb hasta 23:30</em></div>
 <div class="sitem">📲 <em>11 7894-7062</em></div>
 </div>
@@ -632,15 +640,17 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 <div class="gp-wrap" id="gustosProgress"></div>
 <div class="cat-tabs">
 <button class="ctab on-pk" onclick="filtrarGustos('todos',this,'pk')">🍦 Todos</button>
-<button class="ctab" onclick="filtrarGustos('cremoso',this,'pk')">🤎 Cremosos</button>
+<button class="ctab" onclick="filtrarGustos('cremas',this,'pk')">🍨 Cremas</button>
+<button class="ctab" onclick="filtrarGustos('ddl',this,'pk')">🍯 Dulces de leche</button>
+<button class="ctab" onclick="filtrarGustos('frutas',this,'pk')">🍓 Frutas a la crema</button>
+<button class="ctab" onclick="filtrarGustos('chocolates',this,'pk')">🍫 Chocolates</button>
 <button class="ctab" onclick="filtrarGustos('agua',this,'te')">💧 Al agua</button>
-<button class="ctab" onclick="filtrarGustos('especial',this,'pu')">⭐ Especiales</button>
 </div>
 <div class="gustos-grid" id="gustosGrid"></div>
 </div>
 <div class="scard" id="toppingsCard" style="display:none">
 <div class="scard-title">3. ¿Le sumás algo? <span style="font-size:13px;color:var(--text-soft);font-family:'Nunito',sans-serif;font-weight:600;">Opcional</span></div>
-<div class="scard-sub" id="toppingsSub">Extras para tu pote · <strong>1 salsa gratis</strong> · desde la segunda, <strong>$1.500 c/u</strong> · <em>Tocá el mismo extra varias veces para agregar más cantidad</em></div>
+<div class="scard-sub" id="toppingsSub">Extras para tu pote · <strong>1 salsa clásica gratis</strong> · desde la segunda, <strong>$1.500 c/u</strong> · <strong>Pistacho $1.500 siempre</strong> · <em>Tocá el mismo extra varias veces para agregar más cantidad</em></div>
 <div class="toppings-grid" id="toppingsGrid"></div>
 <button class="btn-main" disabled="" id="btnAgregar" onclick="agregarAlCarrito()" style="margin-top:16px;">Agregar al carrito 🛒</button>
 </div>
@@ -755,7 +765,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 <span class="env-emo">🛵</span>
 <div>
 <div class="env-t">¡Envíos a domicilio!</div>
-<div class="env-s">Dom–Jue 13:00–22:30 · Vie–Sáb 13:00–23:30</div>
+<div class="env-s">Dom–Jue 13:00–23:00 · Vie–Sáb 13:00–23:30</div>
 </div>
 </div>
 </div>
@@ -800,12 +810,19 @@ function dmAplicarProductosRemotos(productos){
     const e=(typeof PRODUCTOS_EXTRA!=='undefined')?PRODUCTOS_EXTRA.find(v=>v.id===x.id):null;
     if(e){
       if(Number(x.price)>0) e.price=Number(x.price);
-      if(typeof x.stock==='number') e.stock=x.stock;
+      if(x.trackStock===true && typeof x.stock==='number') e.stock=x.stock;
+      else e.stock=null;
     }
   });
 }
 
+let DM_SYNC_IN_FLIGHT=null;
 async function dmSyncStock(){
+  if(DM_SYNC_IN_FLIGHT) return DM_SYNC_IN_FLIGHT;
+  DM_SYNC_IN_FLIGHT=dmSyncStockInterno();
+  try {return await DM_SYNC_IN_FLIGHT;} finally {DM_SYNC_IN_FLIGHT=null;}
+}
+async function dmSyncStockInterno(){
   try{
     const r=await fetch(DM_API_URL+'?action=products&_='+Date.now(),{cache:'no-store'});
     const data=await r.json();
@@ -829,17 +846,21 @@ async function dmSyncStock(){
 
 function dmProductoDisponible(id){
   const s=DM_REMOTE_STOCK[id];
-  if(!s) return true;
-  const status=String(s.status||'').toUpperCase();
+  if(!s) return true; // los productos sin registro remoto conservan el comportamiento anterior
+  const status=String(s.status||'').trim().toUpperCase();
   if(s.activeWeb===false || status==='OCULTO') return false;
-  if(typeof s.stock==='number') return s.stock>0;
+  if(s.trackStock===true && typeof s.stock==='number') return s.stock>0;
   return status!=='SIN STOCK';
+}
+function dmProductoOculto(id){
+  const p=DM_REMOTE_STOCK[id];
+  return !!p && (p.activeWeb===false || String(p.status||'').trim().toUpperCase()==='OCULTO');
 }
 
 function dmStockTexto(id){
   const s=DM_REMOTE_STOCK[id];
   if(!s) return '';
-  if(typeof s.stock==='number') return s.stock>0 ? 'Stock: '+s.stock : 'Sin stock';
+  if(s.trackStock===true && typeof s.stock==='number') return s.stock>0 ? 'Stock: '+s.stock : 'Sin stock';
   if(String(s.status||'').toUpperCase()==='SIN STOCK') return 'Sin stock';
   return '';
 }
@@ -1005,40 +1026,44 @@ const POTES=[
   {id:'p2k', name:'2 Kg', peso:'2000g',icon:'🍨',price:36000,gustos:8,popular:false,img:'assets/img-3c8a2fede27d.webp'},
 ];
 const GUSTOS=[
-  {id:'g1', name:'Crema del cielo', icon:'☁️', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-3aa535604b82.webp'},
-  {id:'g2', name:'Mousse de limón', icon:'🍋', cat:'especial', hot:false, stock:'ok', img:'assets/img-d38fa0c0c3cd.webp'},
-  {id:'g3', name:'Maracuyá', icon:'🌺', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-bc8bce97f2e7.webp'},
-  {id:'g4', name:'Mascarpone c/frutos rojos', icon:'🍓', cat:'cremoso', hot:false, stock:'poco', img:'assets/img-1e72852ecb64.webp'},
-  {id:'g5', name:'Cookies (Oreo)', icon:'🍪', cat:'especial', hot:true, stock:'ok', img:'assets/img-5cbf5d19bb15.webp'},
-  {id:'g6', name:'Banana Split', icon:'🍌', cat:'especial', hot:false, stock:'ok', img:'assets/img-9ab8d7477720.webp'},
-  {id:'g7', name:'Torta helada Frutilla', ticketName:'Frutilla a la crema', icon:'🍓', cat:'cremoso', hot:true, stock:'ok', img:'assets/img-031de95de86c.webp'},
-  {id:'g8', name:'DL Granizado', icon:'❄️', cat:'especial', hot:false, stock:'ok', img:'assets/img-c1dfa8ed2c18.webp'},
-  {id:'g9', name:'DL Bombón', icon:'🍫', cat:'especial', hot:false, stock:'ok', img:'assets/img-bb44c64f4ca6.webp'},
-  {id:'g10', name:'Chocolate Marroc', icon:'🍫', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-d48d2e9d45cf.webp'},
-  {id:'g11', name:'Choco almendras', icon:'🌰', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-6c6305967d04.webp'},
-  {id:'g12', name:'Sambayón c/almendras', icon:'🥃', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-655747af7c7c.webp'},
-  {id:'g13', name:'Crema rusa', icon:'🍑', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-af824337dd7f.webp'},
-  {id:'g14', name:'Chocolate Dubai', icon:'✨', cat:'cremoso', hot:true, stock:'poco', img:'assets/img-0424ea7f367a.webp'},
-  {id:'g15', name:'Crema americana', icon:'🤍', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-c9123b4f9cec.webp'},
-  {id:'g16', name:'Vainilla', icon:'🌼', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-cadd922a62f7.webp'},
-  {id:'g17', name:'Limón al agua', icon:'🍋', cat:'agua', hot:false, stock:'ok', img:'assets/img-1710b8ede34e.webp'},
-  {id:'g18', name:'Frutilla al agua', ticketName:'Frutilla al agua', icon:'🍓', cat:'agua', hot:true, stock:'ok', img:'assets/img-38bfb962d381.webp'},
-  {id:'g19', name:'Crema Flan', icon:'🍮', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-2334e4f420ef.webp'},
-  {id:'g20',name:'Tramontana',ticketName:'Tramontana',icon:'🍦',cat:'cremoso',img:'assets/img-6747c1812c0a.webp'},
-  {id:'g21',name:'Chocolate amargo',ticketName:'Chocolate amargo',icon:'🍫',cat:'cremoso',img:'assets/img-a41756c77832.webp'},
-  {id:'g22',name:'Súper Dulce de Leche',ticketName:'Súper Dulce de Leche',icon:'🍯',cat:'cremoso',hot:false,stock:'ok',img:'assets/img-3d2a8062cea9.webp'},
-  {id:'g23',name:'Cereza',ticketName:'Cereza',icon:'🍒',cat:'cremoso',hot:false,stock:'ok',img:'assets/img-e1f388df1686.webp'},
-  {id:'g24',name:'Granizado',ticketName:'Granizado',icon:'🍫',cat:'cremoso',hot:false,stock:'ok',img:'assets/img-f56f98feddd0.webp'},
-  {id:'g25',name:'Menta granizada',ticketName:'Menta granizada',icon:'🌿',cat:'cremoso',hot:false,stock:'ok',img:'assets/img-b288b7be9298.webp'},
-  {id:'g26',name:'Dulce de leche con nuez',ticketName:'Dulce de leche con nuez',icon:'🌰',cat:'cremoso',hot:false,stock:'ok',img:'assets/gusto-dulce-de-leche-con-nuez.webp'},
-  {id:'g27',name:'Franui Perla del Sur',ticketName:'Franui Perla del Sur',icon:'🍓',cat:'especial',hot:false,stock:'ok',img:'assets/gusto-franui-perla-del-sur.webp'},
-  {id:'g28',name:'Limón tropical al agua',ticketName:'Limón tropical al agua',icon:'🍋',cat:'agua',hot:false,stock:'ok',img:'assets/gusto-limon-tropical-al-agua.webp'},
-  {id:'g29',name:'Frutos del bosque al agua',ticketName:'Frutos del bosque al agua',icon:'🫐',cat:'agua',hot:false,stock:'ok',img:'assets/gusto-frutos-del-bosque-al-agua.webp'},
+  {id:'g1',grupo:'cremas', name:'Crema del cielo', icon:'☁️', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-3aa535604b82.webp'},
+  {id:'g2',grupo:'frutas', name:'Mousse de limón', icon:'🍋', cat:'especial', hot:false, stock:'ok', img:'assets/img-d38fa0c0c3cd.webp'},
+  {id:'g3',grupo:'frutas', name:'Maracuyá', icon:'🌺', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-bc8bce97f2e7.webp'},
+  {id:'g4',grupo:'frutas', name:'Mascarpone con frutos rojos', icon:'🍓', cat:'cremoso', hot:false, stock:'poco', img:'assets/img-1e72852ecb64.webp'},
+  {id:'g5',grupo:'cremas', name:'Cookies Oreo', icon:'🍪', cat:'especial', hot:true, stock:'ok', img:'assets/img-5cbf5d19bb15.webp'},
+  {id:'g6',grupo:'frutas', name:'Banana Split', icon:'🍌', cat:'especial', hot:false, stock:'ok', img:'assets/img-9ab8d7477720.webp'},
+  {id:'g7',grupo:'frutas', name:'Frutilla a la crema', ticketName:'Frutilla a la crema', icon:'🍓', cat:'cremoso', hot:true, stock:'ok', img:'assets/img-031de95de86c.webp'},
+  {id:'g8',grupo:'ddl', name:'Dulce de leche granizado', icon:'❄️', cat:'especial', hot:false, stock:'ok', img:'assets/img-c1dfa8ed2c18.webp'},
+  {id:'g9',grupo:'ddl', name:'Dulce de leche bombón', icon:'🍫', cat:'especial', hot:false, stock:'ok', img:'assets/img-bb44c64f4ca6.webp'},
+  {id:'g10',grupo:'chocolates', name:'Chocolate Marroc', icon:'🍫', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-d48d2e9d45cf.webp'},
+  {id:'g11',grupo:'chocolates', name:'Chocolate con almendras', icon:'🌰', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-6c6305967d04.webp'},
+  {id:'g12',grupo:'cremas', name:'Sambayón con almendras', icon:'🥃', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-655747af7c7c.webp'},
+  {id:'g13',grupo:'cremas', name:'Crema rusa', icon:'🍑', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-af824337dd7f.webp'},
+  {id:'g14',grupo:'chocolates', name:'Chocolate Dubai', icon:'✨', cat:'cremoso', hot:true, stock:'poco', img:'assets/img-0424ea7f367a.webp'},
+  {id:'g15',grupo:'cremas', name:'Crema americana', icon:'🤍', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-c9123b4f9cec.webp'},
+  {id:'g16',grupo:'cremas', name:'Vainilla', icon:'🌼', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-cadd922a62f7.webp'},
+  {id:'g17',grupo:'agua', name:'Limón al agua', icon:'🍋', cat:'agua', hot:false, stock:'ok', img:'assets/img-1710b8ede34e.webp'},
+  {id:'g18',grupo:'agua', name:'Frutilla al agua', ticketName:'Frutilla al agua', icon:'🍓', cat:'agua', hot:true, stock:'ok', img:'assets/img-38bfb962d381.webp'},
+  {id:'g19',grupo:'cremas', name:'Crema Flan', icon:'🍮', cat:'cremoso', hot:false, stock:'ok', img:'assets/img-2334e4f420ef.webp'},
+  {id:'g20',grupo:'cremas',name:'Tramontana',ticketName:'Tramontana',icon:'🍦',cat:'cremoso',img:'assets/img-6747c1812c0a.webp'},
+  {id:'g21',grupo:'chocolates',name:'Chocolate amargo',ticketName:'Chocolate amargo',icon:'🍫',cat:'cremoso',img:'assets/img-a41756c77832.webp'},
+  {id:'g22',grupo:'ddl',name:'Súper Dulce de Leche',ticketName:'Súper Dulce de Leche',icon:'🍯',cat:'cremoso',hot:false,stock:'ok',img:'assets/img-3d2a8062cea9.webp'},
+  {id:'g23',grupo:'frutas',name:'Cereza',ticketName:'Cereza',icon:'🍒',cat:'cremoso',hot:false,stock:'ok',img:'assets/img-e1f388df1686.webp'},
+  {id:'g24',grupo:'cremas',name:'Granizado',ticketName:'Granizado',icon:'🍫',cat:'cremoso',hot:false,stock:'ok',img:'assets/img-f56f98feddd0.webp'},
+  {id:'g25',grupo:'cremas',name:'Menta granizada',ticketName:'Menta granizada',icon:'🌿',cat:'cremoso',hot:false,stock:'ok',img:'assets/img-b288b7be9298.webp'},
+  {id:'g26',grupo:'ddl',name:'Dulce de leche con nuez',ticketName:'Dulce de leche con nuez',icon:'🌰',cat:'cremoso',hot:false,stock:'ok',img:'assets/gusto-dulce-de-leche-con-nuez.webp'},
+  {id:'g27',grupo:'frutas',name:'Franui Perla del Sur',ticketName:'Franui Perla del Sur',icon:'🍓',cat:'especial',hot:false,stock:'ok',img:'assets/gusto-franui-perla-del-sur.webp'},
+  {id:'g28',grupo:'agua',name:'Limón tropical al agua',ticketName:'Limón tropical al agua',icon:'🍋',cat:'agua',hot:false,stock:'ok',img:'assets/gusto-limon-tropical-al-agua.webp'},
+  {id:'g29',grupo:'agua',name:'Frutos del bosque al agua',ticketName:'Frutos del bosque al agua',icon:'🫐',cat:'agua',hot:false,stock:'ok',img:'assets/gusto-frutos-del-bosque-al-agua.webp'},
+  {id:'g30',grupo:'cremas',name:'Mantecol',ticketName:'Mantecol',icon:'🥜',cat:'cremoso',hot:false,stock:'ok'},
+  {id:'g31',grupo:'cremas',name:'Pistacho',ticketName:'Pistacho',icon:'💚',cat:'cremoso',hot:false,stock:'ok'},
+  {id:'g32',grupo:'cremas',name:'Crema granizada',ticketName:'Crema granizada',icon:'🍫',cat:'cremoso',hot:false,stock:'ok'},
 ];
 const TOPPINGS=[
   {id:'t2',name:'Salsa de chocolate', icon:'🍫',price:0},
   {id:'t3',name:'Salsa de frutilla',  icon:'🍓',price:0},
   {id:'t4',name:'Salsa de dulce de leche',icon:'🥄',price:0},
+  {id:'t9',name:'Salsa de pistacho',icon:'💚',price:1500},
   {id:'t5',name:'Franui Leche',  icon:'🍫',price:9000,img:'assets/img-f9cd72766d6b.webp'},
   {id:'t6',name:'Franui Pink',   icon:'🍓',price:9000,img:'assets/img-ce289dc2ab64.webp'},
   {id:'t7',name:'Franui Amargo', icon:'🍫',price:9000,img:'assets/img-ab50c37699be.webp'},
@@ -1128,6 +1153,7 @@ function volverInicio(irAOpciones=false){
 }
 
 function abrirCategoria(cat){
+  dmSyncStock();
   window.DM_LAST_CATEGORY=cat;
   ocultarVistasCatalogo();
   if(cat==='helados'){
@@ -1152,13 +1178,14 @@ function abrirCategoria(cat){
 function stockDisponibleProducto(id){
   const remoto=DM_REMOTE_STOCK[id];
   if(remoto){
-    if(typeof remoto.stock==='number') return remoto.stock;
+    if(remoto.trackStock===true && typeof remoto.stock==='number') return remoto.stock;
     return null;
   }
   const p=PRODUCTOS_EXTRA.find(x=>x.id===id);
   return p && typeof p.stock==='number' ? p.stock : null;
 }
 function renderCardsProductos(lista){
+  lista=lista.filter(p=>!dmProductoOculto(p.id));
   if(!lista.length)return '<div class="empty-products">Acá vamos a cargar los productos.</div>';
   return `<div class="productos-grid">${lista.map(p=>{
     const q=productoQty[p.id]||1;
@@ -1249,6 +1276,7 @@ function cambiarCantidadProducto(id,delta){
 function agregarProductoExtra(id){
   const p=PRODUCTOS_EXTRA.find(x=>x.id===id);
   if(!p)return;
+  if(!dmProductoDisponible(id)){toast('Este producto no está disponible');return;}
   const qty=productoQty[id]||1;
   const stock=stockDisponibleProducto(id);
   const ya=countProductInCart(id);
@@ -1327,10 +1355,10 @@ function initCountdown(){
     const dia=n.getDay();
     const minutos=n.getHours()*60+n.getMinutes();
     const aperturaMin=13*60;
-    const cierreMin=(dia===5||dia===6)?23*60+30:22*60+30;
+    const cierreMin=(dia===5||dia===6)?24*60:23*60;
 
     if(minutos>=aperturaMin && minutos<cierreMin){
-      const horaCierre=(dia===5||dia===6)?'23:30':'22:30';
+      const horaCierre=(dia===5||dia===6)?'00:00':'23:00';
       bar.innerHTML=`<div class="countdown-bar"><span class="cd-text">🟢 Abierto · Cerramos a las ${horaCierre} hs</span></div>`;
     }else{
       bar.innerHTML='<div class="cd-closed">🕐 Cerrado · Abrimos todos los días a las 13:00 hs</div>';
@@ -1343,7 +1371,7 @@ function initCountdown(){
 
 // POTES
 function renderPotes(){
-  document.getElementById('potesGrid').innerHTML=POTES.map(p=>{
+  document.getElementById('potesGrid').innerHTML=POTES.filter(p=>!dmProductoOculto(p.id)).map(p=>{
     const sel=selectedPote&&selectedPote.id===p.id;
     return `<div class="pote-opt${sel?' selected':''}" data-id="${p.id}" onclick="selectPote('${p.id}')">
       <span class="pote-check">✓</span>
@@ -1366,7 +1394,7 @@ function changePoteQty(dir){
 }
 function selectPote(id){
   selectedPote=POTES.find(p=>p.id===id);
-  if(!selectedPote)return;
+  if(!selectedPote || !dmProductoDisponible(id))return;
   poteQty=1;selectedGustos={};selectedToppings={};
   promoPendiente=null;
   const cartel=document.getElementById('poteQueueCartel');if(cartel)cartel.style.display='none';
@@ -1390,31 +1418,42 @@ function renderProgress(){
   if(used>0){document.getElementById('toppingsCard').style.display='block';renderToppings();}
 }
 
+const GRUPOS_GUSTOS=[
+  {id:'cremas',titulo:'🍨 Cremas'},
+  {id:'ddl',titulo:'🍯 Dulces de leche'},
+  {id:'frutas',titulo:'🍓 Frutas a la crema'},
+  {id:'chocolates',titulo:'🍫 Chocolates'},
+  {id:'agua',titulo:'💧 Al agua'}
+];
 function renderGustos(){
   const used=Object.values(selectedGustos).reduce((a,b)=>a+b,0);
   const max=selectedPote?selectedPote.gustos:0;
-  const items=gustosCat==='todos'?GUSTOS:GUSTOS.filter(g=>g.cat===gustosCat);
-  const catCC={cremoso:'',agua:'te',especial:'pu'};
-  document.getElementById('gustosGrid').innerHTML=items.filter(g=>g&&g.id).map(g=>{
+  function gustoCard(g){
     const cnt=selectedGustos[g.id]||0;
     const full=used>=max&&cnt===0;
     const sinStock=(g.stock==='sin'||g.stock==='agotado');
     const clickable=!sinStock&&(cnt>0||!full);
-    const cc=catCC[g.cat]||'';
-    const cls='gusto-opt'+(cnt>0?' sel':'')+(cnt>0&&cc?' '+cc:'')+(!clickable?' disabled':'');
-    const onclick=clickable?'onclick="addGusto(\''+g.id+'\')"':'';
+    const cls='gusto-opt'+(cnt>0?' sel':'')+(!clickable?' disabled':'');
+    const onclick=clickable ? `onclick="addGusto('${g.id}')"` : '';
     const media=g.img
       ?'<img src="'+g.img+'" alt="'+g.name+'" class="gusto-img">'
-      :'<span class="gusto-ico">'+g.icon+'</span>';
+      :'<span class="gusto-ico">'+(g.icon||'🍦')+'</span>';
     return '<div class="'+cls+'" '+onclick+'>'
       +'<span class="gusto-cnt">'+(cnt>1?cnt:'✓')+'</span>'
-      +media
-      +'<span class="gusto-name">'+g.name+'</span>'
+      +media+'<span class="gusto-name">'+g.name+'</span>'
       +(g.hot&&cnt===0?'<div class="badge-hot"><span>🔥 Popular</span></div>':'')
       +(sinStock?'<div class="badge-stock"><span>SIN STOCK</span></div>':'')
-      
       +'</div>';
-  }).join('');
+  }
+  document.getElementById('gustosGrid').innerHTML=GRUPOS_GUSTOS
+    .filter(group=>gustosCat==='todos'||group.id===gustosCat)
+    .map(group=>{
+      const items=GUSTOS.filter(g=>g&&g.id&&g.grupo===group.id);
+      return '<section class="gustos-grupo">'
+        +'<h3 class="gustos-grupo-titulo">'+group.titulo+'</h3>'
+        +'<div class="gustos-grupo-grid">'+items.map(gustoCard).join('')+'</div>'
+        +'</section>';
+    }).join('');
 }
 
 function filtrarGustos(cat,btn,color){
@@ -1449,7 +1488,7 @@ function renderToppings(){
       <span class="topping-cnt">${cnt>1?cnt:'✓'}</span>
       ${media}
       <span class="topping-name">${t.name}</span>
-      <span class="topping-price">${['t2','t3','t4'].includes(t.id)?'1ª gratis · extras +$1.500':(t.price===0?'Gratis':'+$'+fmt(t.price))}</span>
+      <span class="topping-price">${t.id==='t9'?'Siempre +$1.500':(['t2','t3','t4'].includes(t.id)?'1ª gratis · extras +$1.500':(t.price===0?'Gratis':'+$'+fmt(t.price)))}</span>
     </div>`;
   }).join('');
 }
@@ -2053,8 +2092,11 @@ initCountdown();
 renderPotes();
 updateCartCount();
 volverInicio();
-// Sincroniza precios y stock real con Google Sheets apenas abre la web.
+// La web consulta el mismo API que el panel y se actualiza sin recargar.
 dmSyncStock();
+setInterval(()=>{if(!document.hidden)dmSyncStock();},20000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)dmSyncStock();});
+window.addEventListener('focus',()=>dmSyncStock());
 
 
 
